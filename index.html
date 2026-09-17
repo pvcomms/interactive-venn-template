@@ -1,0 +1,2017 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Interactive Venn — Customizable Template</title>
+    <meta
+      name="description"
+      content="A dark, hand-coded-feeling Venn diagram engine: hover-flood domains, named intersections, a live membership-test cursor readout, and cursor-reactive drift motes. Fully live-editable — labels, colors, copy, and physics — no build step, no dependencies but a font."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,300;1,300&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --ink: #0b0c0e;
+        --paper: #e9e6de;
+        --dim: #96917f;
+        --faint: #807c6c;
+        --faint-t: #8c8777;
+        --hair: #26272a;
+        --hair-2: #44443c;
+        --c-me: #e07a6b;
+        --c-consume: #b48ede;
+        --serif: "Newsreader", Georgia, "Times New Roman", serif;
+        --mono: "IBM Plex Mono", "SFMono-Regular", Menlo, monospace;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: var(--ink);
+        color: var(--paper);
+        font-family: var(--serif);
+        font-weight: 300;
+        font-size: 17px;
+        line-height: 1.65;
+        -webkit-font-smoothing: antialiased;
+        padding: 40px 24px 100px;
+      }
+      .wrap {
+        max-width: 940px;
+        margin: 0 auto;
+      }
+      header {
+        padding-bottom: 8px;
+      }
+      .brand {
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 500;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--dim);
+      }
+      .readme {
+        max-width: 680px;
+        margin: 14px 0 0;
+        font-size: 14.5px;
+        color: var(--dim);
+      }
+      .readme code {
+        font-family: var(--mono);
+        font-size: 12.5px;
+        background: var(--hair);
+        padding: 1px 5px;
+        border-radius: 3px;
+        color: var(--paper);
+      }
+
+      /* ---------- the venn figure ---------- */
+      .hero {
+        position: relative;
+        padding: 28px 0 8px;
+        border-radius: 20px;
+        box-shadow:
+          0 0 40px -12px color-mix(in srgb, var(--c-consume) 45%, transparent),
+          0 0 90px -20px color-mix(in srgb, var(--c-consume) 30%, transparent);
+        margin-top: 24px;
+      }
+      .figlabel {
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.16em;
+        text-transform: lowercase;
+        color: var(--dim);
+        padding-bottom: 6px;
+      }
+      svg.venn {
+        display: block;
+        width: 100%;
+        height: auto;
+        cursor: crosshair;
+      }
+      svg.venn circle.set {
+        fill: transparent;
+        stroke-width: 1.1;
+        transition:
+          stroke-opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+          stroke-width 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      svg.venn circle.set:focus-visible {
+        outline: none;
+        stroke-width: 2.4;
+      }
+      svg.venn circle.offrec {
+        fill: none;
+        stroke: var(--faint);
+        stroke-width: 1.1;
+        stroke-dasharray: 2 7;
+        stroke-linecap: round;
+      }
+      svg.venn circle.offrec:focus-visible {
+        outline: none;
+        stroke: var(--dim);
+      }
+      svg.venn text {
+        font-family: var(--serif);
+        font-style: italic;
+        font-weight: 300;
+        fill: var(--paper);
+        pointer-events: none;
+      }
+      svg.venn .u-label {
+        font-family: var(--mono);
+        font-style: normal;
+        fill: var(--dim);
+        letter-spacing: 0.14em;
+      }
+      .me-dot {
+        fill: var(--c-me);
+        animation: breathe 3.2s ease-in-out infinite;
+      }
+      @keyframes breathe {
+        0%,
+        100% {
+          opacity: 0.55;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .me-dot {
+          animation: none;
+        }
+      }
+      svg.venn circle.tint {
+        pointer-events: none;
+        transition: fill-opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      svg.venn circle.halo {
+        pointer-events: none;
+        fill: none;
+        stroke-width: 0.6;
+        stroke-dasharray: 4 6;
+        opacity: 0;
+        transition: opacity 0.25s ease;
+      }
+      svg.venn g.xg {
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+      }
+      svg.venn g.lens {
+        pointer-events: none;
+      }
+      svg.venn g.lens circle {
+        transition: fill-opacity 0.25s ease;
+      }
+      svg.venn g.xg text {
+        font-family: var(--mono);
+        font-style: normal;
+      }
+      svg.venn g.xg .xname {
+        fill: var(--paper);
+        font-size: 11px;
+        letter-spacing: 0.05em;
+      }
+      svg.venn g.xg .xform {
+        fill: var(--faint-t);
+        font-size: 8px;
+        letter-spacing: 0.08em;
+      }
+      svg.venn text.dlabel {
+        font-family: var(--mono);
+        font-style: normal;
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        transition: opacity 0.25s ease;
+      }
+      .vennpanel {
+        max-width: 680px;
+        margin: 16px auto 0;
+        min-height: 96px;
+        padding-left: 16px;
+        border-left: 2px solid var(--hair);
+        transition: border-color 0.22s ease;
+      }
+      .vennpanel .vp-k {
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--dim);
+      }
+      .vennpanel .vp-k .vp-hint {
+        color: var(--faint-t);
+        text-transform: none;
+        letter-spacing: 0.08em;
+      }
+      .vennpanel .vp-name {
+        font-family: var(--serif);
+        font-size: 20px;
+        font-weight: 400;
+        color: var(--paper);
+        margin-top: 4px;
+      }
+      .vennpanel .vp-desc {
+        font-size: 14.5px;
+        line-height: 1.68;
+        color: var(--dim);
+        max-width: 540px;
+        margin-top: 4px;
+      }
+      @media (max-width: 560px) {
+        svg.venn text {
+          font-size: 34px;
+        }
+        svg.venn .u-label {
+          font-size: 20px;
+        }
+        svg.venn .melbl {
+          font-size: 22px;
+        }
+      }
+
+      /* ---------- the venn cursor: a live membership test ---------- */
+      .vret line {
+        stroke: var(--paper);
+        stroke-width: 0.6;
+        opacity: 0.18;
+      }
+      .vret circle {
+        fill: none;
+        stroke: var(--paper);
+        stroke-width: 0.9;
+        opacity: 0.32;
+      }
+      text.vread {
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.06em;
+        fill: var(--faint-t);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+      }
+      text.vread.on {
+        opacity: 1;
+      }
+      text.vread tspan.nm {
+        fill: var(--dim);
+      }
+      @media (hover: none) {
+        text.vread,
+        .vret {
+          display: none !important;
+        }
+      }
+
+      /* ---------- the customize panel ---------- */
+      .customize {
+        margin-top: 40px;
+        border-top: 1px solid var(--hair);
+        padding-top: 28px;
+      }
+      .cz-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      .cz-title {
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--paper);
+      }
+      .cz-sub {
+        font-size: 13.5px;
+        color: var(--faint-t);
+      }
+      .cz-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 14px 0 26px;
+      }
+      .cz-btn {
+        font-family: var(--mono);
+        font-size: 11.5px;
+        letter-spacing: 0.06em;
+        color: var(--dim);
+        background: transparent;
+        border: 1px solid var(--hair-2);
+        border-radius: 6px;
+        padding: 7px 12px;
+        cursor: pointer;
+        transition:
+          color 0.15s ease,
+          border-color 0.15s ease;
+      }
+      .cz-btn:hover {
+        color: var(--paper);
+        border-color: var(--dim);
+      }
+      .cz-btn.primary {
+        color: var(--paper);
+        border-color: var(--c-consume);
+      }
+      .cz-btn.primary:hover {
+        background: color-mix(in srgb, var(--c-consume) 14%, transparent);
+      }
+      input[type="file"] {
+        display: none;
+      }
+      .cz-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 18px;
+        margin-bottom: 28px;
+      }
+      .cz-card {
+        border: 1px solid var(--hair);
+        border-radius: 10px;
+        padding: 14px;
+      }
+      .cz-card h4 {
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--faint-t);
+        font-weight: 500;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .cz-swatch {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        flex-shrink: 0;
+      }
+      .cz-field {
+        margin-bottom: 8px;
+      }
+      .cz-field label {
+        display: block;
+        font-family: var(--mono);
+        font-size: 9.5px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--faint);
+        margin-bottom: 3px;
+      }
+      .cz-field input[type="text"],
+      .cz-field textarea {
+        width: 100%;
+        background: var(--ink);
+        color: var(--paper);
+        border: 1px solid var(--hair-2);
+        border-radius: 5px;
+        padding: 6px 8px;
+        font-family: var(--serif);
+        font-size: 13.5px;
+        resize: vertical;
+      }
+      .cz-field input[type="text"]:focus,
+      .cz-field textarea:focus {
+        outline: 1px solid var(--c-consume);
+        border-color: transparent;
+      }
+      .cz-field input[type="color"] {
+        width: 100%;
+        height: 28px;
+        background: none;
+        border: 1px solid var(--hair-2);
+        border-radius: 5px;
+        padding: 2px;
+        cursor: pointer;
+      }
+      .cz-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .cz-row .cz-field {
+        flex: 1;
+        margin-bottom: 0;
+      }
+      .cz-section-title {
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--dim);
+        margin: 24px 0 12px;
+      }
+      .cz-physics {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 14px 22px;
+      }
+      .cz-slider label {
+        display: flex;
+        justify-content: space-between;
+        font-family: var(--mono);
+        font-size: 10.5px;
+        letter-spacing: 0.04em;
+        color: var(--faint-t);
+        margin-bottom: 5px;
+      }
+      .cz-slider output {
+        color: var(--paper);
+      }
+      .cz-slider input[type="range"] {
+        width: 100%;
+        accent-color: var(--c-consume);
+      }
+      .cz-toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13.5px;
+        color: var(--dim);
+      }
+      .cz-toggle input {
+        accent-color: var(--c-consume);
+      }
+      .cz-layout-select {
+        font-family: var(--mono);
+        font-size: 12px;
+        background: var(--ink);
+        color: var(--paper);
+        border: 1px solid var(--hair-2);
+        border-radius: 6px;
+        padding: 6px 10px;
+        cursor: pointer;
+      }
+      footer.credit {
+        margin-top: 60px;
+        font-size: 12.5px;
+        color: var(--faint);
+        text-align: center;
+      }
+      footer.credit a {
+        color: var(--faint-t);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div class="brand">Interactive Venn — customizable template</div>
+        <p class="readme">
+          Hover a domain to flood it and read the panel below. Hover an overlap
+          to name it. Click to filter, click again to fire
+          <code>onEnter</code> (wired to <code>console.log</code> by default).
+          The dust motes drift on their own, bounce off the dashed
+          off-the-record set, and flee your cursor before settling back.
+          Everything below the diagram — labels, colors, copy, physics, even the
+          number of circles — is live-editable. Export your version as JSON to
+          keep or share it.
+        </p>
+      </header>
+
+      <!-- ============ THE VENN ============ -->
+      <div class="hero">
+        <div class="figlabel" id="figlabel">fig. 1 · what coexists</div>
+        <svg
+          class="venn"
+          viewBox="0 0 900 640"
+          role="group"
+          id="vennSvg"
+          aria-label="An interactive, customizable Venn diagram"
+        ></svg>
+        <div class="vennpanel" id="cap1" aria-live="polite"></div>
+      </div>
+
+      <!-- ============ CUSTOMIZE ============ -->
+      <div class="customize">
+        <div class="cz-head">
+          <div>
+            <div class="cz-title">Customize</div>
+            <div class="cz-sub">
+              Edit anything below — the diagram updates live.
+            </div>
+          </div>
+          <select class="cz-layout-select" id="layoutSelect">
+            <option value="3">3 circles — every region real</option>
+            <option value="5">
+              5 circles — one set drawn partly off-frame
+            </option>
+          </select>
+        </div>
+
+        <div class="cz-actions">
+          <button class="cz-btn primary" id="btnExport">
+            ↓ export config (.json)
+          </button>
+          <label class="cz-btn" for="fileImport">↑ import config (.json)</label>
+          <input type="file" id="fileImport" accept="application/json" />
+          <button class="cz-btn" id="btnReset">
+            reset this layout to default
+          </button>
+        </div>
+
+        <div class="cz-section-title">Domains</div>
+        <div class="cz-grid" id="domainCards"></div>
+
+        <div class="cz-section-title">Named intersections</div>
+        <div class="cz-grid" id="pairCards"></div>
+
+        <div class="cz-section-title">Extras</div>
+        <div class="cz-grid">
+          <div class="cz-card">
+            <h4>Off-the-record set</h4>
+            <label class="cz-toggle"
+              ><input type="checkbox" id="offEnabled" /> shown, dashed, partly
+              outside the frame</label
+            >
+            <div class="cz-field" style="margin-top: 8px">
+              <label>Label</label><input type="text" id="offLabel" />
+            </div>
+          </div>
+          <div class="cz-card">
+            <h4>
+              <span class="cz-swatch" id="markerSwatch"></span>Highlight marker
+            </h4>
+            <label class="cz-toggle"
+              ><input type="checkbox" id="markerEnabled" /> a single point,
+              marked and labeled</label
+            >
+            <div class="cz-row" style="margin-top: 8px">
+              <div class="cz-field">
+                <label>Label</label><input type="text" id="markerLabel" />
+              </div>
+              <div class="cz-field" style="max-width: 70px">
+                <label>Color</label><input type="color" id="markerColor" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cz-section-title">Physics &amp; feel</div>
+        <div class="cz-card">
+          <div class="cz-physics">
+            <div class="cz-slider">
+              <label>drift speed <output id="outDriftBase"></output></label>
+              <input type="range" id="driftBase" min="0" max="80" step="1" />
+            </div>
+            <div class="cz-slider">
+              <label
+                >max speed on flee <output id="outDriftMax"></output
+              ></label>
+              <input type="range" id="driftMax" min="40" max="260" step="5" />
+            </div>
+            <div class="cz-slider">
+              <label
+                >cursor reach (px) <output id="outCursorReach"></output
+              ></label>
+              <input type="range" id="cursorReach" min="0" max="220" step="5" />
+            </div>
+            <div class="cz-slider">
+              <label>cursor force <output id="outCursorForce"></output></label>
+              <input
+                type="range"
+                id="cursorForce"
+                min="0"
+                max="500"
+                step="10"
+              />
+            </div>
+            <div class="cz-slider">
+              <label>hover flood <output id="outFlood"></output></label>
+              <input type="range" id="flood" min="0" max="40" step="1" />
+            </div>
+            <label class="cz-toggle" style="align-self: end"
+              ><input type="checkbox" id="bloomEnabled" /> bloom glow on
+              hover</label
+            >
+          </div>
+        </div>
+      </div>
+
+      <footer class="credit">
+        Engine started life as fig. 1 on
+        <a href="https://paramv.com" target="_blank" rel="noopener"
+          >paramv.com</a
+        >, with a nod to
+        <a href="https://eileenie.net" target="_blank" rel="noopener"
+          >eileenie.net</a
+        >'s cursor-driven venn. MIT licensed — take it, reskin it, ship it.
+      </footer>
+    </div>
+
+    <script>
+      (function () {
+        "use strict";
+        var reduce = window.matchMedia(
+          "(prefers-reduced-motion: reduce)",
+        ).matches;
+        var hoverNone = window.matchMedia("(hover: none)").matches;
+
+        function frameLoop(drawFn, fallbackMs) {
+          var stopped = false,
+            rafAt = performance.now(),
+            rafId = null;
+          function frame(now) {
+            if (stopped) return;
+            rafAt = now;
+            drawFn(now);
+            if (stopped) return;
+            rafId = requestAnimationFrame(frame);
+          }
+          rafId = requestAnimationFrame(frame);
+          var fb = setInterval(function () {
+            if (stopped) return;
+            var now = performance.now();
+            if (now - rafAt > fallbackMs * 3) drawFn(now);
+          }, fallbackMs);
+          return {
+            stop: function () {
+              stopped = true;
+              clearInterval(fb);
+              if (rafId !== null) cancelAnimationFrame(rafId);
+            },
+          };
+        }
+
+        /* ================= LAYOUT GEOMETRY (fixed — the part that has to be solved for real overlaps) ================= */
+        var LAYOUTS = {
+          3: {
+            label: "3 circles",
+            note: "a classic three-set venn — every region is real",
+            domains: [
+              {
+                id: "d0",
+                cx: 450,
+                cy: 233.5,
+                r: 195,
+                lx: 450,
+                ly: 28,
+                anchor: "middle",
+              },
+              {
+                id: "d1",
+                cx: 350,
+                cy: 406.7,
+                r: 195,
+                lx: 145,
+                ly: 412,
+                anchor: "end",
+              },
+              {
+                id: "d2",
+                cx: 550,
+                cy: 406.7,
+                r: 195,
+                lx: 755,
+                ly: 412,
+                anchor: "start",
+              },
+            ],
+            pairs: [
+              { ids: ["d0", "d1"], ax: 361, ay: 297.6 },
+              { ids: ["d0", "d2"], ax: 539, ay: 297.6 },
+              { ids: ["d1", "d2"], ax: 450, ay: 451.7 },
+            ],
+            triple: { ids: ["d0", "d1", "d2"], mx: 450, my: 349 },
+            offrec: { cx: 820, cy: 580, r: 76 },
+          },
+          5: {
+            label: "5 circles",
+            note: "five circles can't show all thirty-one combinations",
+            domains: [
+              {
+                id: "d0",
+                cx: 300,
+                cy: 255,
+                r: 178,
+                lx: 300,
+                ly: 60,
+                anchor: "middle",
+              },
+              {
+                id: "d1",
+                cx: 560,
+                cy: 255,
+                r: 178,
+                lx: 560,
+                ly: 60,
+                anchor: "middle",
+              },
+              {
+                id: "d2",
+                cx: 430,
+                cy: 445,
+                r: 152,
+                lx: 430,
+                ly: 617,
+                anchor: "middle",
+              },
+              {
+                id: "d3",
+                cx: 190,
+                cy: 420,
+                r: 115,
+                lx: 120,
+                ly: 290,
+                anchor: "middle",
+              },
+              {
+                id: "d4",
+                cx: 665,
+                cy: 430,
+                r: 112,
+                lx: 795,
+                ly: 415,
+                anchor: "middle",
+              },
+            ],
+            pairs: [
+              { ids: ["d0", "d1"], ax: 430, ay: 225 },
+              { ids: ["d0", "d3"], ax: 221, ay: 358 },
+              { ids: ["d0", "d2"], ax: 352, ay: 380 },
+              { ids: ["d1", "d2"], ax: 512, ay: 380 },
+              { ids: ["d1", "d4"], ax: 637, ay: 362 },
+              { ids: ["d2", "d3"], ax: 286, ay: 470 },
+              { ids: ["d2", "d4"], ax: 571, ay: 463 },
+            ],
+            triple: { ids: ["d0", "d1", "d2"], mx: 430, my: 325 },
+            offrec: { cx: 820, cy: 580, r: 76 },
+          },
+        };
+
+        /* ================= DEFAULT CONTENT (fully user-editable from here down) ================= */
+        var DEFAULTS = {
+          3: {
+            domains: {
+              d0: {
+                label: "STORY",
+                color: "#b48ede",
+                desc: "The thing you'd write even if nobody read it. Curiosity with no exit plan.",
+              },
+              d1: {
+                label: "CRAFT",
+                color: "#6fa8dc",
+                desc: "The skill under the story — form, revision, the boring reps nobody sees.",
+              },
+              d2: {
+                label: "MONEY",
+                color: "#7fb069",
+                desc: "What it costs to keep doing this. Rent doesn't care about your process.",
+              },
+            },
+            pairs: {
+              "d0,d1": {
+                name: "the discipline",
+                desc: "curiosity that showed up enough times to become a practice.",
+              },
+              "d0,d2": {
+                name: "the pitch",
+                desc: "the story, told to someone who has to decide whether to pay for it.",
+              },
+              "d1,d2": {
+                name: "the trade",
+                desc: "craft good enough that someone else will fund the next round of it.",
+              },
+            },
+            triple: {
+              name: "the sustainable thing",
+              desc: "story you believe, craft you're proud of, money that keeps the lights on. rare — that's the point.",
+            },
+            marker: { enabled: true, label: "here", color: "#e07a6b" },
+            offrec: {
+              enabled: true,
+              label: "the one you're not telling anyone about yet",
+            },
+            physics: {
+              driftBase: 30,
+              driftMax: 120,
+              cursorReach: 100,
+              cursorForce: 200,
+              flood: 11,
+              bloom: true,
+            },
+          },
+          5: {
+            domains: {
+              d0: {
+                label: "MIND / BODY",
+                color: "#b48ede",
+                desc: "A nervous system I'm still learning to read. Neurodivergence as signal, not deficit.",
+              },
+              d1: {
+                label: "TECHNOLOGY",
+                color: "#6fa8dc",
+                desc: "Understood in order to see through it. Power concentrates here — so do the tools to build your way out.",
+              },
+              d2: {
+                label: "PHILOSOPHY",
+                color: "#7fb069",
+                desc: "Epistemology for its own sake. Frameworks to calibrate toward clarity rather than comfort.",
+              },
+              d3: {
+                label: "SOCIETY",
+                color: "#e3c567",
+                desc: "Social contracts breaking in real time. How power, consent, and collective dynamics actually run.",
+              },
+              d4: {
+                label: "CREATION",
+                color: "#d98aa8",
+                desc: "Curiosity-guided projects. A foot in the old world, always making.",
+              },
+            },
+            pairs: {
+              "d0,d1": {
+                name: "cognitive architecture",
+                desc: "how the wiring runs, studied with the machines' own tools.",
+              },
+              "d0,d3": {
+                name: "structural difference",
+                desc: "a mind built differently, in a world built for the default.",
+              },
+              "d0,d2": {
+                name: "phenomenology",
+                desc: "what experience is like from inside.",
+              },
+              "d1,d2": {
+                name: "ai alignment",
+                desc: "getting the powerful thing to want what we'd endorse.",
+              },
+              "d1,d4": {
+                name: "building your way out",
+                desc: "the tools of the platform, turned toward the exit.",
+              },
+              "d2,d3": {
+                name: "power & consent",
+                desc: "who decides, who's asked, who's merely enrolled.",
+              },
+              "d2,d4": {
+                name: "making as thinking",
+                desc: "the essay and the system are the same move.",
+              },
+            },
+            triple: {
+              name: "me",
+              desc: "the one point in all three drawn. the rest is off the frame.",
+            },
+            marker: { enabled: true, label: "me", color: "#e07a6b" },
+            offrec: { enabled: true, label: "the set I don't draw" },
+            physics: {
+              driftBase: 34,
+              driftMax: 130,
+              cursorReach: 100,
+              cursorForce: 220,
+              flood: 11,
+              bloom: true,
+            },
+          },
+        };
+
+        function clone(o) {
+          return JSON.parse(JSON.stringify(o));
+        }
+        function pairKey(ids) {
+          return ids.slice().sort().join(",");
+        }
+        function letterFor(label) {
+          return (label || "?").trim().charAt(0).toUpperCase() || "?";
+        }
+
+        var state = {
+          layout: "5",
+          configs: { 3: clone(DEFAULTS["3"]), 5: clone(DEFAULTS["5"]) },
+        };
+
+        var svg = document.getElementById("vennSvg");
+        var cap1 = document.getElementById("cap1");
+        var vennPointer = null;
+        var driftHandle = null,
+          driftVisible = true,
+          driftLast = null,
+          ioD = null;
+        var sets = [],
+          PAIRS = {},
+          offrec = { cx: 0, cy: 0, r: 0 };
+
+        function currentLayout() {
+          return LAYOUTS[state.layout];
+        }
+        function currentConfig() {
+          return state.configs[state.layout];
+        }
+
+        /* ================= BUILD THE SVG FROM LAYOUT + CONFIG ================= */
+        function buildMarkup() {
+          var L = currentLayout(),
+            C = currentConfig();
+          var parts = [];
+          parts.push(
+            '<defs><clipPath id="uclip"><rect x="18" y="16" width="864" height="606" rx="26"/></clipPath>',
+          );
+          parts.push(
+            '<filter id="bloom" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>',
+          );
+          L.domains.forEach(function (d) {
+            parts.push(
+              '<clipPath id="cp-' +
+                d.id +
+                '"><circle cx="' +
+                d.cx +
+                '" cy="' +
+                d.cy +
+                '" r="' +
+                d.r +
+                '"/></clipPath>',
+            );
+          });
+          parts.push("</defs>");
+          parts.push(
+            '<rect x="18" y="16" width="864" height="606" rx="26" fill="none" stroke="var(--c-consume)" stroke-opacity="0.4" stroke-width="1" stroke-dasharray="1 6" stroke-linecap="round"/>',
+          );
+          parts.push(
+            '<text class="u-label" x="48" y="58" font-size="13">𝒰 · both / and</text>',
+          );
+
+          if (C.offrec.enabled) {
+            parts.push(
+              '<circle class="offrec" id="c-offrec" cx="' +
+                L.offrec.cx +
+                '" cy="' +
+                L.offrec.cy +
+                '" r="' +
+                L.offrec.r +
+                '" clip-path="url(#uclip)" tabindex="0" role="img" aria-label="' +
+                esc(C.offrec.label) +
+                '"/>',
+            );
+          }
+
+          L.domains.forEach(function (d) {
+            var dc = C.domains[d.id];
+            parts.push(
+              '<circle class="tint" id="t-' +
+                d.id +
+                '" cx="' +
+                d.cx +
+                '" cy="' +
+                d.cy +
+                '" r="' +
+                d.r +
+                '" fill="' +
+                dc.color +
+                '" fill-opacity="0.01"/>',
+            );
+          });
+
+          L.pairs.forEach(function (p) {
+            var a = p.ids[0],
+              b = p.ids[1];
+            var bDom = L.domains.filter(function (x) {
+              return x.id === b;
+            })[0];
+            parts.push(
+              '<g class="lens" data-pair="' +
+                a +
+                "," +
+                b +
+                '" clip-path="url(#cp-' +
+                a +
+                ')"><circle cx="' +
+                bDom.cx +
+                '" cy="' +
+                bDom.cy +
+                '" r="' +
+                bDom.r +
+                '" fill="#e9e6de" fill-opacity="0"/></g>',
+            );
+          });
+
+          L.domains.forEach(function (d) {
+            var dc = C.domains[d.id];
+            parts.push(
+              '<circle class="halo" id="h-' +
+                d.id +
+                '" cx="' +
+                d.cx +
+                '" cy="' +
+                d.cy +
+                '" r="' +
+                (d.r + 9) +
+                '" stroke="' +
+                dc.color +
+                '"/>',
+            );
+          });
+          L.domains.forEach(function (d) {
+            var dc = C.domains[d.id];
+            parts.push(
+              '<circle class="set" id="c-' +
+                d.id +
+                '" cx="' +
+                d.cx +
+                '" cy="' +
+                d.cy +
+                '" r="' +
+                d.r +
+                '" fill="transparent" stroke="' +
+                dc.color +
+                '" tabindex="0" role="link" aria-label="' +
+                esc(dc.label) +
+                '"/>',
+            );
+          });
+          L.domains.forEach(function (d) {
+            var dc = C.domains[d.id];
+            parts.push(
+              '<text class="dlabel" id="l-' +
+                d.id +
+                '" x="' +
+                d.lx +
+                '" y="' +
+                d.ly +
+                '" text-anchor="' +
+                d.anchor +
+                '" fill="' +
+                dc.color +
+                '">' +
+                esc(dc.label) +
+                "</text>",
+            );
+          });
+
+          L.pairs.forEach(function (p) {
+            var key = pairKey(p.ids),
+              pc = C.pairs[key];
+            var form = p.ids
+              .map(function (id) {
+                return letterFor(C.domains[id].label);
+              })
+              .sort()
+              .join(" ∩ ");
+            parts.push(
+              '<g class="xg" data-pair="' +
+                p.ids.join(",") +
+                '"><text class="xname" x="' +
+                p.ax +
+                '" y="' +
+                p.ay +
+                '" text-anchor="middle">' +
+                esc(pc.name) +
+                '</text><text class="xform" x="' +
+                p.ax +
+                '" y="' +
+                (p.ay + 14) +
+                '" text-anchor="middle">' +
+                form +
+                "</text></g>",
+            );
+          });
+
+          parts.push(
+            '<circle class="drift" id="drift1" cx="' +
+              (L.domains[0].cx - 60) +
+              '" cy="' +
+              (L.domains[0].cy - 40) +
+              '" r="2.6" fill="#e9e6de" opacity="0.45" pointer-events="none"/>',
+          );
+          parts.push(
+            '<circle class="drift" id="drift2" cx="' +
+              (L.offrec.cx - 120) +
+              '" cy="' +
+              (L.offrec.cy - 60) +
+              '" r="2.6" fill="#e9e6de" opacity="0.45" pointer-events="none"/>',
+          );
+
+          if (C.marker.enabled && L.triple) {
+            parts.push(
+              '<circle class="me-dot" cx="' +
+                L.triple.mx +
+                '" cy="' +
+                L.triple.my +
+                '" r="3.5" fill="' +
+                C.marker.color +
+                '"/>',
+            );
+            parts.push(
+              '<text class="melbl" x="' +
+                (L.triple.mx + 14) +
+                '" y="' +
+                (L.triple.my + 5) +
+                '" font-size="14" fill="' +
+                C.marker.color +
+                '">' +
+                esc(C.marker.label) +
+                "</text>",
+            );
+          }
+
+          parts.push(
+            '<g class="vret" id="vRet" style="display:none" aria-hidden="true"><line id="vRetV" x1="0" y1="16" x2="0" y2="622"/><line id="vRetH" x1="18" y1="0" x2="882" y2="0"/><circle id="vRetC" cx="0" cy="0" r="9"/></g>',
+          );
+          parts.push(
+            '<text class="vread" id="vRead" x="48" y="80">cursor ∉ 𝒰</text>',
+          );
+
+          svg.innerHTML = parts.join("");
+        }
+
+        function esc(s) {
+          return String(s == null ? "" : s)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+        }
+
+        /* ================= WIRE INTERACTION (re-run after every rebuild) ================= */
+        var lensGs = [],
+          xgGs = [],
+          hovSets = [],
+          hovOff = false,
+          fltSet = null;
+
+        function toLocal(evt) {
+          var r = svg.getBoundingClientRect();
+          return {
+            x: (evt.clientX - r.left) * (900 / r.width),
+            y: (evt.clientY - r.top) * (640 / r.height),
+          };
+        }
+        function inCircle(p, c) {
+          var dx = p.x - c.cx,
+            dy = p.y - c.cy;
+          return dx * dx + dy * dy <= c.r * c.r;
+        }
+        function activeAt(p) {
+          return sets.filter(function (c) {
+            return inCircle(p, c);
+          });
+        }
+        function nearest(act, p) {
+          return act.slice().sort(function (a2, b2) {
+            return (
+              Math.hypot(p.x - a2.cx, p.y - a2.cy) / a2.r -
+              Math.hypot(p.x - b2.cx, p.y - b2.cy) / b2.r
+            );
+          })[0];
+        }
+        function byId(id) {
+          return sets.filter(function (x) {
+            return x.id === id;
+          })[0];
+        }
+        function enterSet(c) {
+          console.log(
+            "entered:",
+            c.id,
+            c.label,
+            "— wire onEnter(id) to navigate/scroll instead",
+          );
+        }
+
+        function panelRest() {
+          cap1.innerHTML =
+            '<div class="vp-k">𝒰 · both / and</div><div class="vp-desc">Hover to read — click to filter, click again to enter.</div>';
+          cap1.style.borderColor = "var(--hair)";
+        }
+
+        function paint() {
+          var C = currentConfig();
+          var pairKeyHov = null;
+          if (hovSets.length === 2) {
+            var k = pairKey(
+              hovSets.map(function (x) {
+                return x.id;
+              }),
+            );
+            if (PAIRS[k]) pairKeyHov = k;
+          }
+          var effId =
+            hovSets.length === 1
+              ? hovSets[0].id
+              : hovSets.length === 0 && !hovOff
+                ? fltSet
+                : null;
+          var flood = C.physics.flood / 100;
+
+          sets.forEach(function (c) {
+            var op;
+            if (hovSets.length >= 2)
+              op = hovSets.some(function (h) {
+                return h.id === c.id;
+              })
+                ? 1
+                : 0.12;
+            else if (effId) op = c.id === effId ? 1 : 0.12;
+            else if (hovOff) op = 0.25;
+            else op = 0.72;
+            var lit = op === 1;
+            var el = document.getElementById("c-" + c.id);
+            el.style.strokeOpacity = op;
+            el.style.strokeWidth = lit ? 2.6 : 1.4;
+            el.setAttribute(
+              "filter",
+              lit && C.physics.bloom ? "url(#bloom)" : "",
+            );
+            var tint = document.getElementById("t-" + c.id);
+            if (tint) tint.style.fillOpacity = lit ? flood : 0.01;
+            var lbl = document.getElementById("l-" + c.id);
+            lbl.style.opacity = Math.max(op, 0.2);
+            var halo = document.getElementById("h-" + c.id);
+            if (halo) halo.style.opacity = fltSet === c.id ? 0.3 : 0;
+          });
+
+          lensGs.forEach(function (g) {
+            var pk2 = g.getAttribute("data-pair"),
+              pp = pk2.split(",");
+            var lop = 0;
+            if (pairKeyHov === pk2) lop = 0.1;
+            else if (effId && pp.indexOf(effId) !== -1) lop = 0.045;
+            g.firstElementChild.style.fillOpacity = lop;
+          });
+          xgGs.forEach(function (g) {
+            var pk = g.getAttribute("data-pair"),
+              parents = pk.split(",");
+            var op;
+            if (pairKeyHov === pairKey(parents)) op = 1;
+            else if (effId && parents.indexOf(effId) !== -1) op = 0.9;
+            else if (effId || hovSets.length >= 2 || hovOff) op = 0.16;
+            else op = 0.6;
+            g.style.opacity = op;
+          });
+
+          var L = currentLayout();
+          if (hovOff) {
+            cap1.innerHTML =
+              '<div class="vp-k">∁ · unlabeled</div><div class="vp-name">' +
+              esc(C.offrec.label) +
+              ".</div>";
+            cap1.style.borderColor = "var(--faint)";
+          } else if (L.triple && hovSets.length >= L.triple.ids.length) {
+            var ids = hovSets.map(function (x) {
+              return x.id;
+            });
+            var isTriple =
+              L.triple.ids.every(function (id) {
+                return ids.indexOf(id) !== -1;
+              }) && hovSets.length === L.triple.ids.length;
+            if (isTriple) {
+              cap1.innerHTML =
+                '<div class="vp-k">' +
+                L.triple.ids
+                  .map(function (id) {
+                    return letterFor(C.domains[id].label);
+                  })
+                  .sort()
+                  .join(" ∩ ") +
+                '</div><div class="vp-name">' +
+                esc(C.triple.name) +
+                '</div><div class="vp-desc">' +
+                esc(C.triple.desc) +
+                "</div>";
+              cap1.style.borderColor = C.marker.enabled
+                ? C.marker.color
+                : "var(--hair)";
+            } else {
+              cap1.innerHTML =
+                '<div class="vp-k">' +
+                hovSets
+                  .map(function (x) {
+                    return letterFor(x.label);
+                  })
+                  .sort()
+                  .join(" ∩ ") +
+                '</div><div class="vp-desc">rare air — the named regions are one set over.</div>';
+              cap1.style.borderColor = "var(--hair)";
+            }
+          } else if (pairKeyHov) {
+            var pr = PAIRS[pairKeyHov];
+            var names = pairKeyHov
+              .split(",")
+              .map(function (id) {
+                return byId(id).label;
+              })
+              .join(" · ");
+            cap1.innerHTML =
+              '<div class="vp-k">' +
+              pairKeyHov
+                .split(",")
+                .map(function (id) {
+                  return letterFor(byId(id).label);
+                })
+                .sort()
+                .join(" ∩ ") +
+              '&#160;&#160;<span class="vp-hint">' +
+              esc(names) +
+              '</span></div><div class="vp-name">' +
+              esc(pr.name) +
+              '</div><div class="vp-desc">' +
+              esc(pr.desc) +
+              "</div>";
+            cap1.style.borderColor = "var(--faint)";
+          } else if (effId) {
+            var c2 = byId(effId);
+            var hint =
+              fltSet === effId ? "click again → enter" : "click to filter";
+            cap1.innerHTML =
+              '<div class="vp-k" style="color:' +
+              c2.color +
+              '">' +
+              esc(c2.label) +
+              '&#160;<span class="vp-hint">· ' +
+              hint +
+              '</span></div><div class="vp-desc">' +
+              esc(c2.desc) +
+              "</div>";
+            cap1.style.borderColor = c2.color;
+          } else {
+            panelRest();
+          }
+        }
+
+        function wireInteraction() {
+          var L = currentLayout(),
+            C = currentConfig();
+          sets = L.domains.map(function (d) {
+            var dc = C.domains[d.id];
+            return {
+              id: d.id,
+              cx: d.cx,
+              cy: d.cy,
+              r: d.r,
+              color: dc.color,
+              label: dc.label,
+              desc: dc.desc,
+            };
+          });
+          PAIRS = {};
+          L.pairs.forEach(function (p) {
+            var key = pairKey(p.ids);
+            PAIRS[key] = C.pairs[key];
+          });
+          offrec = { cx: L.offrec.cx, cy: L.offrec.cy, r: L.offrec.r };
+          lensGs = Array.prototype.slice.call(svg.querySelectorAll("g.lens"));
+          xgGs = Array.prototype.slice.call(svg.querySelectorAll("g.xg"));
+          hovSets = [];
+          hovOff = false;
+          fltSet = null;
+
+          panelRest();
+          paint();
+
+          svg.addEventListener("mousemove", function (evt) {
+            var p = toLocal(evt);
+            hovSets = activeAt(p);
+            hovOff = hovSets.length === 0 && inCircle(p, offrec);
+            paint();
+          });
+          svg.addEventListener("mouseleave", function () {
+            hovSets = [];
+            hovOff = false;
+            paint();
+          });
+          svg.addEventListener("click", function (evt) {
+            var p = toLocal(evt);
+            var act = activeAt(p);
+            if (!act.length) {
+              fltSet = null;
+              hovOff = inCircle(p, offrec);
+              paint();
+              return;
+            }
+            var chosen = nearest(act, p);
+            if (fltSet === chosen.id) enterSet(chosen);
+            else {
+              fltSet = chosen.id;
+              paint();
+            }
+          });
+          document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape" && fltSet) {
+              fltSet = null;
+              paint();
+            }
+          });
+          sets.forEach(function (c) {
+            var el = document.getElementById("c-" + c.id);
+            if (!el) return;
+            el.addEventListener("focus", function () {
+              hovSets = [c];
+              hovOff = false;
+              paint();
+            });
+            el.addEventListener("blur", function () {
+              hovSets = [];
+              paint();
+            });
+            el.addEventListener("keydown", function (e) {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                if (fltSet === c.id) enterSet(c);
+                else {
+                  fltSet = c.id;
+                  paint();
+                }
+              }
+            });
+          });
+          var offEl = document.getElementById("c-offrec");
+          if (offEl) {
+            offEl.addEventListener("focus", function () {
+              hovOff = true;
+              hovSets = [];
+              paint();
+            });
+            offEl.addEventListener("blur", function () {
+              hovOff = false;
+              paint();
+            });
+          }
+
+          if (!reduce) {
+            sets.forEach(function (c, i) {
+              var el = document.getElementById("c-" + c.id);
+              var circ = 2 * Math.PI * c.r;
+              el.style.strokeDasharray = circ;
+              el.style.strokeDashoffset = circ;
+              el.style.transition =
+                "stroke-dashoffset 1.8s cubic-bezier(0.4,0,0.2,1) " +
+                i * 0.22 +
+                "s, stroke-opacity 0.22s cubic-bezier(0.16,1,0.3,1), stroke-width 0.18s cubic-bezier(0.16,1,0.3,1)";
+              setTimeout(function () {
+                el.style.strokeDashoffset = 0;
+              }, 60);
+              setTimeout(
+                function () {
+                  el.style.strokeDasharray = "none";
+                  el.style.transition = "";
+                },
+                2100 + i * 220,
+              );
+            });
+          }
+
+          wireReticle();
+          wireDrift();
+        }
+
+        function wireReticle() {
+          if (!svg || hoverNone) return;
+          var vRet = document.getElementById("vRet"),
+            vRead = document.getElementById("vRead"),
+            vV = document.getElementById("vRetV"),
+            vH = document.getElementById("vRetH"),
+            vC = document.getElementById("vRetC");
+          if (!vRet || !vRead) return;
+          var C = currentConfig();
+          var last = "";
+          function regionAt(x, y) {
+            var inside = sets.filter(function (s) {
+              var dx = x - s.cx,
+                dy = y - s.cy;
+              return dx * dx + dy * dy <= s.r * s.r;
+            });
+            var offdx = x - offrec.cx,
+              offdy = y - offrec.cy;
+            var off =
+              C.offrec.enabled &&
+              offdx * offdx + offdy * offdy <= offrec.r * offrec.r;
+            return { inside: inside, off: off };
+          }
+          function readout(x, y) {
+            var r = regionAt(x, y);
+            if (r.off)
+              return {
+                f: "cursor ∈ ⟨unlabeled⟩",
+                n: C.offrec.label,
+                plain: "offrec",
+              };
+            if (!r.inside.length)
+              return {
+                f:
+                  "cursor ∈ 𝒰 ∖ (" +
+                  sets
+                    .map(function (s) {
+                      return letterFor(s.label);
+                    })
+                    .join(" ∪ ") +
+                  ")",
+                n: "",
+                plain: "u",
+              };
+            var letters = r.inside
+              .map(function (s) {
+                return letterFor(s.label);
+              })
+              .sort()
+              .join(" ∩ ");
+            var name = "";
+            if (r.inside.length === 2) {
+              var key = pairKey(
+                r.inside.map(function (s) {
+                  return s.id;
+                }),
+              );
+              var p = PAIRS[key];
+              if (p) name = p.name;
+            } else if (r.inside.length === 1) {
+              name = r.inside[0].label;
+            } else if (currentLayout().triple) {
+              var tids = currentLayout().triple.ids;
+              var rids = r.inside.map(function (s) {
+                return s.id;
+              });
+              if (
+                tids.every(function (id) {
+                  return rids.indexOf(id) !== -1;
+                })
+              )
+                name = C.marker.enabled ? C.marker.label : C.triple.name;
+            }
+            return { f: "cursor ∈ " + letters, n: name, plain: letters };
+          }
+          svg.addEventListener("pointermove", function (ev) {
+            var box = svg.getBoundingClientRect();
+            if (!box.width) return;
+            var x = ((ev.clientX - box.left) / box.width) * 900;
+            var y = ((ev.clientY - box.top) / box.height) * 640;
+            vRet.style.display = "";
+            vRead.classList.add("on");
+            vV.setAttribute("x1", x);
+            vV.setAttribute("x2", x);
+            vH.setAttribute("y1", y);
+            vH.setAttribute("y2", y);
+            vC.setAttribute("cx", x);
+            vC.setAttribute("cy", y);
+            vennPointer = { x: x, y: y };
+            var o = readout(x, y);
+            if (o.plain === last) return;
+            last = o.plain;
+            vRead.textContent = "";
+            vRead.appendChild(document.createTextNode(o.f));
+            if (o.n) {
+              var t = document.createElementNS(
+                "http://www.w3.org/2000/svg",
+                "tspan",
+              );
+              t.setAttribute("class", "nm");
+              t.textContent = "  ·  " + o.n;
+              vRead.appendChild(t);
+            }
+          });
+          svg.addEventListener("pointerleave", function () {
+            vRet.style.display = "none";
+            vRead.classList.remove("on");
+            last = "";
+            vennPointer = null;
+          });
+        }
+
+        function stopDrift() {
+          if (driftHandle !== null) {
+            driftHandle.stop();
+            driftHandle = null;
+          }
+          driftLast = null;
+          if (ioD) {
+            ioD.disconnect();
+            ioD = null;
+          }
+        }
+
+        function wireDrift() {
+          stopDrift();
+          if (reduce) {
+            svg.querySelectorAll(".drift").forEach(function (el) {
+              el.setAttribute("opacity", "0");
+            });
+            return;
+          }
+          var d1 = document.getElementById("drift1"),
+            d2 = document.getElementById("drift2");
+          var driftBalls = [
+            {
+              el: d1,
+              x: parseFloat(d1.getAttribute("cx")),
+              y: parseFloat(d1.getAttribute("cy")),
+              vx: 32,
+              vy: 22,
+            },
+            {
+              el: d2,
+              x: parseFloat(d2.getAttribute("cx")),
+              y: parseFloat(d2.getAttribute("cy")),
+              vx: -27,
+              vy: -30,
+            },
+          ];
+          var FR = { x0: 28, y0: 26, x1: 872, y1: 612 };
+          var driftTick = function (now) {
+            var C = currentConfig(),
+              P = C.physics;
+            if (driftLast === null) driftLast = now;
+            var dt = Math.min((now - driftLast) / 1000, 0.1);
+            driftLast = now;
+            driftBalls.forEach(function (b) {
+              b.x += b.vx * dt;
+              b.y += b.vy * dt;
+              if (b.x < FR.x0 || b.x > FR.x1) {
+                b.vx *= -1;
+                b.x = Math.max(FR.x0, Math.min(FR.x1, b.x));
+              }
+              if (b.y < FR.y0 || b.y > FR.y1) {
+                b.vy *= -1;
+                b.y = Math.max(FR.y0, Math.min(FR.y1, b.y));
+              }
+              if (C.offrec.enabled) {
+                var dx = b.x - offrec.cx,
+                  dy = b.y - offrec.cy;
+                var d = Math.hypot(dx, dy);
+                if (d < offrec.r + 4 && d > 0) {
+                  var nx = dx / d,
+                    ny = dy / d;
+                  var dot = b.vx * nx + b.vy * ny;
+                  if (dot < 0) {
+                    b.vx -= 2 * dot * nx;
+                    b.vy -= 2 * dot * ny;
+                  }
+                  var push = offrec.r + 4;
+                  b.x = offrec.cx + nx * push;
+                  b.y = offrec.cy + ny * push;
+                }
+              }
+              if (vennPointer && P.cursorReach > 0) {
+                var cdx = b.x - vennPointer.x,
+                  cdy = b.y - vennPointer.y;
+                var cd = Math.max(Math.hypot(cdx, cdy), 4);
+                if (cd < P.cursorReach) {
+                  var press = (1 - cd / P.cursorReach) * P.cursorForce;
+                  b.vx += (cdx / cd) * press * dt;
+                  b.vy += (cdy / cd) * press * dt;
+                }
+              }
+              var spd = Math.hypot(b.vx, b.vy),
+                MAXSPD = P.driftMax,
+                BASESPD = P.driftBase;
+              if (spd > MAXSPD) {
+                b.vx *= MAXSPD / spd;
+                b.vy *= MAXSPD / spd;
+              } else if (spd > BASESPD) {
+                var settle = Math.pow(0.055, dt);
+                var k =
+                  (BASESPD + (spd - BASESPD) * settle) / Math.max(spd, 0.0001);
+                b.vx *= k;
+                b.vy *= k;
+              }
+              var act = activeAt(b);
+              b.el.setAttribute(
+                "fill",
+                act.length === 1 ? act[0].color : "#e9e6de",
+              );
+              b.el.setAttribute("cx", b.x.toFixed(1));
+              b.el.setAttribute("cy", b.y.toFixed(1));
+            });
+          };
+          var ensureDrift = function () {
+            if (driftHandle === null && driftVisible)
+              driftHandle = frameLoop(driftTick, 40);
+          };
+          ioD = new IntersectionObserver(
+            function (entries) {
+              entries.forEach(function (e) {
+                driftVisible = e.isIntersecting;
+                if (driftVisible) ensureDrift();
+                else {
+                  if (driftHandle !== null) {
+                    driftHandle.stop();
+                    driftHandle = null;
+                  }
+                }
+              });
+            },
+            { threshold: 0 },
+          );
+          ioD.observe(svg);
+          ensureDrift();
+        }
+
+        /* ================= THE CUSTOMIZE PANEL ================= */
+        var domainCards = document.getElementById("domainCards");
+        var pairCards = document.getElementById("pairCards");
+
+        function renderPanel() {
+          var L = currentLayout(),
+            C = currentConfig();
+          document.getElementById("figlabel").textContent =
+            "fig. 1 · " + L.note;
+
+          domainCards.innerHTML = "";
+          L.domains.forEach(function (d) {
+            var dc = C.domains[d.id];
+            var card = document.createElement("div");
+            card.className = "cz-card";
+            card.innerHTML =
+              '<h4><span class="cz-swatch" style="background:' +
+              dc.color +
+              '"></span>' +
+              esc(dc.label) +
+              "</h4>" +
+              '<div class="cz-row"><div class="cz-field"><label>Label</label><input type="text" data-role="label" value="' +
+              esc(dc.label) +
+              '"></div>' +
+              '<div class="cz-field" style="max-width:56px"><label>Color</label><input type="color" data-role="color" value="' +
+              dc.color +
+              '"></div></div>' +
+              '<div class="cz-field"><label>Description</label><textarea data-role="desc" rows="3">' +
+              esc(dc.desc) +
+              "</textarea></div>";
+            card
+              .querySelector('[data-role="label"]')
+              .addEventListener("input", function (e) {
+                dc.label = e.target.value;
+                card.querySelector("h4").lastChild.textContent = dc.label;
+                refreshCardHeaders();
+                rebuildAndKeepPanel();
+              });
+            card
+              .querySelector('[data-role="color"]')
+              .addEventListener("input", function (e) {
+                dc.color = e.target.value;
+                card.querySelector(".cz-swatch").style.background = dc.color;
+                rebuildAndKeepPanel();
+              });
+            card
+              .querySelector('[data-role="desc"]')
+              .addEventListener("input", function (e) {
+                dc.desc = e.target.value;
+                paint();
+              });
+            domainCards.appendChild(card);
+          });
+
+          pairCards.innerHTML = "";
+          L.pairs.forEach(function (p) {
+            var key = pairKey(p.ids),
+              pc = C.pairs[key];
+            var names = p.ids
+              .map(function (id) {
+                return C.domains[id].label;
+              })
+              .join(" ∩ ");
+            var card = document.createElement("div");
+            card.className = "cz-card";
+            card.setAttribute("data-ids", p.ids.join(","));
+            card.innerHTML =
+              "<h4>" +
+              esc(names) +
+              "</h4>" +
+              '<div class="cz-field"><label>Name</label><input type="text" data-role="name" value="' +
+              esc(pc.name) +
+              '"></div>' +
+              '<div class="cz-field"><label>Description</label><input type="text" data-role="desc" value="' +
+              esc(pc.desc) +
+              '"></div>';
+            card
+              .querySelector('[data-role="name"]')
+              .addEventListener("input", function (e) {
+                pc.name = e.target.value;
+                rebuildAndKeepPanel();
+              });
+            card
+              .querySelector('[data-role="desc"]')
+              .addEventListener("input", function (e) {
+                pc.desc = e.target.value;
+                paint();
+              });
+            pairCards.appendChild(card);
+          });
+          if (L.triple) {
+            var tcard = document.createElement("div");
+            tcard.className = "cz-card";
+            tcard.setAttribute("data-ids", L.triple.ids.join(","));
+            tcard.setAttribute("data-triple", "1");
+            tcard.innerHTML =
+              "<h4>" +
+              L.triple.ids
+                .map(function (id) {
+                  return C.domains[id].label;
+                })
+                .join(" ∩ ") +
+              " (all three)</h4>" +
+              '<div class="cz-field"><label>Name</label><input type="text" data-role="name" value="' +
+              esc(C.triple.name) +
+              '"></div>' +
+              '<div class="cz-field"><label>Description</label><input type="text" data-role="desc" value="' +
+              esc(C.triple.desc) +
+              '"></div>';
+            tcard
+              .querySelector('[data-role="name"]')
+              .addEventListener("input", function (e) {
+                C.triple.name = e.target.value;
+              });
+            tcard
+              .querySelector('[data-role="desc"]')
+              .addEventListener("input", function (e) {
+                C.triple.desc = e.target.value;
+              });
+            pairCards.appendChild(tcard);
+          }
+
+          document.getElementById("offEnabled").checked = C.offrec.enabled;
+          document.getElementById("offLabel").value = C.offrec.label;
+          document.getElementById("markerEnabled").checked = C.marker.enabled;
+          document.getElementById("markerLabel").value = C.marker.label;
+          document.getElementById("markerColor").value = C.marker.color;
+          document.getElementById("markerSwatch").style.background =
+            C.marker.color;
+
+          document.getElementById("driftBase").value = C.physics.driftBase;
+          document.getElementById("driftMax").value = C.physics.driftMax;
+          document.getElementById("cursorReach").value = C.physics.cursorReach;
+          document.getElementById("cursorForce").value = C.physics.cursorForce;
+          document.getElementById("flood").value = C.physics.flood;
+          document.getElementById("bloomEnabled").checked = C.physics.bloom;
+          syncPhysicsOutputs();
+
+          document.getElementById("layoutSelect").value = state.layout;
+        }
+
+        function syncPhysicsOutputs() {
+          var C = currentConfig();
+          document.getElementById("outDriftBase").textContent =
+            C.physics.driftBase;
+          document.getElementById("outDriftMax").textContent =
+            C.physics.driftMax;
+          document.getElementById("outCursorReach").textContent =
+            C.physics.cursorReach;
+          document.getElementById("outCursorForce").textContent =
+            C.physics.cursorForce;
+          document.getElementById("outFlood").textContent = (
+            C.physics.flood / 100
+          ).toFixed(2);
+        }
+
+        function refreshCardHeaders() {
+          var C = currentConfig();
+          Array.prototype.forEach.call(
+            pairCards.querySelectorAll("[data-ids]"),
+            function (card) {
+              var ids = card.getAttribute("data-ids").split(",");
+              var names = ids
+                .map(function (id) {
+                  return C.domains[id].label;
+                })
+                .join(" ∩ ");
+              card.querySelector("h4").textContent =
+                names +
+                (card.hasAttribute("data-triple") ? " (all three)" : "");
+            },
+          );
+        }
+
+        function rebuildAndKeepPanel() {
+          buildMarkup();
+          wireInteraction();
+        }
+
+        document
+          .getElementById("layoutSelect")
+          .addEventListener("change", function (e) {
+            state.layout = e.target.value;
+            rebuildAndKeepPanel();
+            renderPanel();
+          });
+        document
+          .getElementById("offEnabled")
+          .addEventListener("change", function (e) {
+            currentConfig().offrec.enabled = e.target.checked;
+            rebuildAndKeepPanel();
+          });
+        document
+          .getElementById("offLabel")
+          .addEventListener("input", function (e) {
+            currentConfig().offrec.label = e.target.value;
+          });
+        document
+          .getElementById("markerEnabled")
+          .addEventListener("change", function (e) {
+            currentConfig().marker.enabled = e.target.checked;
+            rebuildAndKeepPanel();
+          });
+        document
+          .getElementById("markerLabel")
+          .addEventListener("input", function (e) {
+            currentConfig().marker.label = e.target.value;
+            rebuildAndKeepPanel();
+          });
+        document
+          .getElementById("markerColor")
+          .addEventListener("input", function (e) {
+            currentConfig().marker.color = e.target.value;
+            document.getElementById("markerSwatch").style.background =
+              e.target.value;
+            rebuildAndKeepPanel();
+          });
+
+        [
+          ["driftBase", "driftBase"],
+          ["driftMax", "driftMax"],
+          ["cursorReach", "cursorReach"],
+          ["cursorForce", "cursorForce"],
+          ["flood", "flood"],
+        ].forEach(function (pair) {
+          document
+            .getElementById(pair[0])
+            .addEventListener("input", function (e) {
+              currentConfig().physics[pair[1]] = Number(e.target.value);
+              syncPhysicsOutputs();
+              paint();
+            });
+        });
+        document
+          .getElementById("bloomEnabled")
+          .addEventListener("change", function (e) {
+            currentConfig().physics.bloom = e.target.checked;
+            paint();
+          });
+
+        document
+          .getElementById("btnReset")
+          .addEventListener("click", function () {
+            if (
+              !confirm(
+                "Reset the " +
+                  state.layout +
+                  "-circle layout to its default content?",
+              )
+            )
+              return;
+            state.configs[state.layout] = clone(DEFAULTS[state.layout]);
+            rebuildAndKeepPanel();
+            renderPanel();
+          });
+        document
+          .getElementById("btnExport")
+          .addEventListener("click", function () {
+            var payload = { layout: state.layout, config: currentConfig() };
+            var blob = new Blob([JSON.stringify(payload, null, 2)], {
+              type: "application/json",
+            });
+            var a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "venn-config-" + state.layout + "circle.json";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+          });
+        document
+          .getElementById("fileImport")
+          .addEventListener("change", function (e) {
+            var file = e.target.files[0];
+            if (!file) return;
+            var reader = new FileReader();
+            reader.onload = function () {
+              try {
+                var payload = JSON.parse(reader.result);
+                if (
+                  !payload.layout ||
+                  !LAYOUTS[payload.layout] ||
+                  !payload.config
+                )
+                  throw new Error("bad shape");
+                state.layout = payload.layout;
+                state.configs[payload.layout] = payload.config;
+                rebuildAndKeepPanel();
+                renderPanel();
+              } catch (err) {
+                alert(
+                  "Couldn't read that file — expecting JSON exported from this same tool.",
+                );
+              }
+            };
+            reader.readAsText(file);
+            e.target.value = "";
+          });
+
+        /* ================= BOOT ================= */
+        buildMarkup();
+        wireInteraction();
+        renderPanel();
+      })();
+    </script>
+  </body>
+</html>
