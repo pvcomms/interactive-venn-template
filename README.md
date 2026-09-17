@@ -9,7 +9,8 @@ back.
 Everything is live-editable from the page itself — no build step, no dependencies but a
 Google Font, one file.
 
-**[Open `index.html`](./index.html) in any browser to use it.** No server required.
+**[Live demo](https://pvcomms.github.io/interactive-venn-template/)** — or clone/download
+and open [`index.html`](./index.html) in any browser. No server, no build step.
 
 ## What's customizable
 
