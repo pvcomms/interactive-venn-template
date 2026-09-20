@@ -5,12 +5,12 @@ or renumbered — the number is the permanent name of that work, so `venn 005` s
 something in a year.
 
 Frontmatter carries `title` and `status`. Status is one of `draft`, `next`, `building`,
-`shipped`, `parked`. `~/Code/cfap/bin/scan.py` reads only the frontmatter, and the first feature
+`shipped`, `parked`. `~/work/capp/spine/bin/scan.py` reads only the frontmatter, and the first feature
 in `building` → `next` → `draft` order becomes this project's next action on the front door.
 
 A feature is marked `shipped` only when its acceptance checks were actually run and passed.
 
-The shape to copy: `~/Code/cfap/docs/templates/feature.template.md`.
+The shape to copy: `~/work/capp/spine/docs/templates/feature.template.md`.
 
 | #   | Title                         | Status |
 | --- | ----------------------------- | ------ |
